@@ -622,7 +622,7 @@ TPinballComponent* control::make_component_link(component_tag_base* tag)
 void control::handler(int code, TPinballComponent* cmp)
 {
 	component_control* control = cmp->Control;
-	
+
 	if (control)
 	{
 		if (code == 1019)
@@ -680,7 +680,7 @@ void control::pbctrl_bdoor_controller(char key)
 	}
 	else if (pb::FullTiltMode && strcmp(bufferEnd - 5, "quote") == 0)
 	{
-		// A sad developer easter egg type 'cheat' from Full Tilt 
+		// A sad developer easter egg type 'cheat' from Full Tilt
 		float time = 0;
 		for (auto quote : quotes)
 			control_mission_text_box_tag.Component->Display(quote, time += 3);
@@ -1811,6 +1811,7 @@ void control::SkillShotGate1Control(int code, TPinballComponent* caller)
 {
 	if (code == 63)
 	{
+		SpaceCadetPinballJNI::setBallInPlunger(false);
 		control_lite200_tag.Component->Message(9, 5.0);
 		if (light_on(&control_lite67_tag))
 		{

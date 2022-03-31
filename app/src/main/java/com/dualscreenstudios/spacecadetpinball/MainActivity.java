@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 
+import com.dualscreenstudios.spacecadetpinball.databinding.ActivityMainBinding;
+
 import org.libsdl.app.SDLActivity;
 
 import java.io.File;
@@ -21,6 +23,8 @@ import java.io.OutputStream;
 public class MainActivity extends SDLActivity {
     private static final String TAG = "MainActivity";
 
+    private ActivityMainBinding mBinding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,19 +32,17 @@ public class MainActivity extends SDLActivity {
         copyAssets(filesDir);
         initNative(filesDir.getAbsolutePath() + "/");
 
-        View v = getLayoutInflater().inflate(R.layout.activity_main, mLayout, false);
+        mBinding = ActivityMainBinding.inflate(getLayoutInflater(), mLayout, false);
+
+//        View v = getLayoutInflater().inflate(R.layout.activity_main, mLayout, false);
 
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
-        mLayout.addView(v, layoutParams);
+        mLayout.addView(mBinding.getRoot(), layoutParams);
 
-        v.bringToFront();
+        mBinding.getRoot().bringToFront();
 
-        Button left = findViewById(R.id.left);
-        Button right = findViewById(R.id.right);
-        Button plunger = findViewById(R.id.plunger);
-
-        left.setOnTouchListener((v1, event) -> {
+        mBinding.left.setOnTouchListener((v1, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_Z);
             }
@@ -50,7 +52,7 @@ public class MainActivity extends SDLActivity {
             return false;
         });
 
-        right.setOnTouchListener((v1, event) -> {
+        mBinding.right.setOnTouchListener((v1, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_SLASH);
             }
@@ -60,7 +62,7 @@ public class MainActivity extends SDLActivity {
             return false;
         });
 
-        plunger.setOnTouchListener((v1, event) -> {
+        mBinding.plunger.setOnTouchListener((v1, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_SPACE);
             }
@@ -77,7 +79,7 @@ public class MainActivity extends SDLActivity {
             try {
                 for (String asset : assetManager.list("")) {
                     Log.d(TAG, "Copying " + asset);
-                    try (InputStream is = assetManager.open(asset)){
+                    try (InputStream is = assetManager.open(asset)) {
                         try (OutputStream os = new FileOutputStream(new File(filesDir, asset))) {
                             byte[] buffer = new byte[1024];
                             int len;
@@ -95,6 +97,30 @@ public class MainActivity extends SDLActivity {
         }
     }
 
+    private StateHelper.IStateListener mStateListener = new StateHelper.IStateListener() {
+        @Override
+        public void onStateChanged(int state) {
+
+        }
+
+        @Override
+        public void onBallInPlungerChanged(boolean isBallInPlunger) {
+            runOnUiThread(() -> mBinding.plunger.setVisibility(isBallInPlunger ? View.VISIBLE : View.GONE));
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        StateHelper.INSTANCE.addListener(mStateListener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        StateHelper.INSTANCE.removeListener(mStateListener);
+    }
+
     @Override
     protected String getMainFunction() {
         return "main";
@@ -102,7 +128,7 @@ public class MainActivity extends SDLActivity {
 
     @Override
     protected String[] getLibraries() {
-        return new String[] {
+        return new String[]{
                 "SDL2",
                 "SpaceCadetPinball"
         };
